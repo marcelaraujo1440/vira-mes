@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 38 45% 95%;
+    --foreground: 22 29% 14%;
+    --card: 42 42% 98%;
+    --card-foreground: 22 29% 14%;
+    --popover: 42 42% 98%;
+    --popover-foreground: 22 29% 14%;
+    --primary: 19 39% 21%;
+    --primary-foreground: 37 50% 96%;
+    --secondary: 42 30% 88%;
+    --secondary-foreground: 22 29% 18%;
+    --muted: 40 25% 90%;
+    --muted-foreground: 22 16% 38%;
+    --accent: 45 71% 62%;
+    --accent-foreground: 21 34% 16%;
+    --destructive: 2 68% 48%;
+    --destructive-foreground: 40 50% 98%;
+    --border: 28 20% 78%;
+    --input: 28 20% 82%;
+    --ring: 45 71% 62%;
+    --chart-1: 18 58% 41%;
+    --chart-2: 39 73% 56%;
+    --chart-3: 134 18% 40%;
+    --chart-4: 208 29% 42%;
+    --chart-5: 345 44% 51%;
+    --radius: 1.4rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      linear-gradient(135deg, rgba(255, 248, 236, 0.92), rgba(244, 233, 217, 0.92)),
+      radial-gradient(circle at 20% 20%, rgba(224, 176, 62, 0.22), transparent 26%),
+      radial-gradient(circle at 80% 0%, rgba(84, 113, 91, 0.18), transparent 22%);
+    min-height: 100vh;
+  }
+
+  ::selection {
+    @apply bg-accent/70 text-accent-foreground;
+  }
+}
+
+@layer utilities {
+  .paper-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(248, 240, 228, 0.93)),
+      repeating-linear-gradient(
+        0deg,
+        rgba(92, 69, 43, 0.015),
+        rgba(92, 69, 43, 0.015) 1px,
+        transparent 1px,
+        transparent 24px
+      );
+  }
+
+  .ink-title {
+    text-wrap: balance;
+  }
+}
