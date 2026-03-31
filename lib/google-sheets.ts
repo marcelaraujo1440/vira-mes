@@ -18,11 +18,19 @@ type RowMatch = {
 const expenseHeaders = ["id", "date", "month", "category", "description", "amount"];
 const incomeHeaders = ["id", "month", "description", "amount"];
 
+function normalizePrivateKey(privateKey: string) {
+  return privateKey
+    .trim()
+    .replace(/^"|"$/g, "")
+    .replace(/\\n/g, "\n")
+    .replace(/\r/g, "");
+}
+
 function createSheetsClient() {
   const env = getEnv();
   const auth = new google.auth.JWT({
     email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    key: normalizePrivateKey(env.GOOGLE_PRIVATE_KEY),
     scopes: ["https://www.googleapis.com/auth/spreadsheets"]
   });
 
