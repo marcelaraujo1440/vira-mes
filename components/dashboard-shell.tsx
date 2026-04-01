@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { ArrowUpRight, Landmark, RefreshCcw } from "lucide-react";
+import { ArrowDownLeft, ArrowUpCircle, ArrowUpRight, Landmark, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { ExpenseForm } from "@/components/expense-form";
@@ -14,6 +14,14 @@ import { SummaryCard } from "@/components/summary-card";
 import { TransactionsTable } from "@/components/transactions-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { getCurrentMonth } from "@/lib/date";
 import { formatMonthLabel } from "@/lib/format";
 import type { Summary, Transaction } from "@/lib/types";
@@ -31,6 +39,8 @@ export function DashboardShell() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
 
   const loadSummary = useCallback(async (nextMonth: string) => {
     setIsLoading(true);
@@ -58,6 +68,16 @@ export function DashboardShell() {
 
   async function refreshSummary() {
     await loadSummary(month);
+  }
+
+  async function handleExpenseSaved() {
+    await refreshSummary();
+    setIsExpenseDialogOpen(false);
+  }
+
+  async function handleIncomeSaved() {
+    await refreshSummary();
+    setIsIncomeDialogOpen(false);
   }
 
   function handleMonthChange(value: string) {
@@ -125,8 +145,71 @@ export function DashboardShell() {
             </CardContent>
           </Card>
           <div className="grid gap-4 sm:grid-cols-2">
-            <ExpenseForm onSuccess={refreshSummary} />
-            <IncomeForm onSuccess={refreshSummary} />
+            <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+              <Card className="overflow-hidden">
+                <CardContent className="flex h-full flex-col justify-between gap-5 p-6">
+                  <div className="space-y-3">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-amber-200/60 px-3 py-1 text-xs uppercase tracking-[0.24em] text-amber-950">
+                      Saida
+                    </div>
+                    <div>
+                      <h3 className="font-[family-name:var(--font-display)] text-3xl">Registrar saída</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Lance um gasto em poucos toques e volte direto para o painel.
+                      </p>
+                    </div>
+                  </div>
+                  <DialogTrigger asChild>
+                    <Button className="w-full justify-between" size="lg">
+                      Abrir formulário
+                      <ArrowDownLeft className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                </CardContent>
+              </Card>
+              <DialogContent>
+                <DialogHeader className="mb-5">
+                  <DialogTitle>Nova saída</DialogTitle>
+                  <DialogDescription>
+                    Registre despesas do mês com data, categoria e valor.
+                  </DialogDescription>
+                </DialogHeader>
+                <ExpenseForm onSuccess={handleExpenseSaved} submitLabel="Salvar saída" />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
+              <Card className="overflow-hidden">
+                <CardContent className="flex h-full flex-col justify-between gap-5 p-6">
+                  <div className="space-y-3">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-200/60 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-950">
+                      Entrada
+                    </div>
+                    <div>
+                      <h3 className="font-[family-name:var(--font-display)] text-3xl">Registrar entrada</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Adicione receitas sem poluir a tela principal do seu fechamento.
+                      </p>
+                    </div>
+                  </div>
+                  <DialogTrigger asChild>
+                    <Button className="w-full justify-between" size="lg" variant="secondary">
+                      Abrir formulário
+                      <ArrowUpCircle className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                </CardContent>
+              </Card>
+              <DialogContent>
+                <DialogHeader className="mb-5">
+                  <DialogTitle>Nova entrada</DialogTitle>
+                  <DialogDescription>
+                    Registre salário, extra ou qualquer receita do período selecionado.
+                  </DialogDescription>
+                </DialogHeader>
+                <IncomeForm onSuccess={handleIncomeSaved} submitLabel="Salvar entrada" />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </section>

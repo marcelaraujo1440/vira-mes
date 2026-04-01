@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { v4 as uuid } from "uuid";
 
 import { expenseSheetName, incomeSheetName, type ExpenseCategory } from "@/lib/constants";
+import { getMonthFromDate, normalizeMonthValue } from "@/lib/date";
 import { getEnv } from "@/lib/env";
 import { getRecentMonths } from "@/lib/date";
 import type { Expense, Income, MonthlyBalancePoint } from "@/lib/types";
@@ -38,14 +39,20 @@ function createSheetsClient() {
 }
 
 function parseAmount(value: string | undefined) {
-  return Number(value ?? 0);
+  const normalizedValue = (value ?? "0").toString().trim().replace(/\s/g, "").replace(",", ".");
+  const amount = Number(normalizedValue);
+
+  return Number.isFinite(amount) ? amount : 0;
 }
 
 function mapExpenseRow(row: RawRow): Expense {
+  const date = row[1] ?? "";
+  const monthFromSheet = normalizeMonthValue(row[2]);
+
   return {
     id: row[0] ?? "",
-    date: row[1] ?? "",
-    month: row[2] ?? "",
+    date,
+    month: monthFromSheet || (date ? getMonthFromDate(date) : ""),
     category: (row[3] ?? "Outros") as ExpenseCategory,
     description: row[4] ?? "",
     amount: parseAmount(row[5])
@@ -55,7 +62,7 @@ function mapExpenseRow(row: RawRow): Expense {
 function mapIncomeRow(row: RawRow): Income {
   return {
     id: row[0] ?? "",
-    month: row[1] ?? "",
+    month: normalizeMonthValue(row[1]),
     description: row[2] ?? "",
     amount: parseAmount(row[3])
   };
