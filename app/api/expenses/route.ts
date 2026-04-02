@@ -6,7 +6,7 @@ import {
   deleteExpenseById,
   filterByMonth,
   listExpenses
-} from "@/lib/google-sheets";
+} from "@/lib/database";
 import { expenseInputSchema, deleteQuerySchema, monthQuerySchema, normalizeExpensePayload } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";

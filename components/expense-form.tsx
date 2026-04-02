@@ -77,7 +77,12 @@ export function ExpenseForm({ onSuccess, submitLabel = "Salvar saída" }: Expens
     <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-2">
         <Label htmlFor="expense-date">Data</Label>
-        <Input id="expense-date" type="date" {...form.register("date")} />
+        <Input
+          id="expense-date"
+          inputMode="numeric"
+          placeholder="2026-04-01"
+          {...form.register("date")}
+        />
         <p className="text-xs text-destructive">{form.formState.errors.date?.message}</p>
       </div>
       <div className="grid gap-2">

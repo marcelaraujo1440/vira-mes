@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { listExpenses, listIncome } from "@/lib/database";
 import { getCurrentMonth } from "@/lib/date";
-import { listExpenses, listIncome } from "@/lib/google-sheets";
 import { buildSummary } from "@/lib/summary";
 
 export const dynamic = "force-dynamic";

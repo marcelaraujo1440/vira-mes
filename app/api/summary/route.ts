@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/api";
-import { listExpenses, listIncome } from "@/lib/google-sheets";
+import { listExpenses, listIncome } from "@/lib/database";
 import { buildSummary } from "@/lib/summary";
 import { monthQuerySchema } from "@/lib/validation";
 

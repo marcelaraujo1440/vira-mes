@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/api";
-import { appendIncome, deleteIncomeById, filterByMonth, listIncome } from "@/lib/google-sheets";
+import { appendIncome, deleteIncomeById, filterByMonth, listIncome } from "@/lib/database";
 import { deleteQuerySchema, incomeInputSchema, monthQuerySchema, normalizeIncomePayload } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
