@@ -34,10 +34,18 @@ const ChartsPanel = dynamic(
   }
 );
 
-export function DashboardShell() {
-  const [month, setMonth] = useState(getCurrentMonth());
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+type DashboardShellProps = {
+  initialMonth?: string;
+  initialSummary?: Summary | null;
+};
+
+export function DashboardShell({
+  initialMonth = getCurrentMonth(),
+  initialSummary = null
+}: DashboardShellProps) {
+  const [month, setMonth] = useState(initialMonth);
+  const [summary, setSummary] = useState<Summary | null>(initialSummary);
+  const [isLoading, setIsLoading] = useState(initialSummary ? false : true);
   const [isPending, startTransition] = useTransition();
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
@@ -46,7 +54,10 @@ export function DashboardShell() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/summary?month=${nextMonth}`, { cache: "no-store" });
+      const response = await fetch(`/api/summary?month=${nextMonth}`, {
+        cache: "no-store",
+        credentials: "include"
+      });
 
       if (!response.ok) {
         const error = (await response.json()) as { message?: string };
@@ -63,8 +74,12 @@ export function DashboardShell() {
   }, []);
 
   useEffect(() => {
+    if (month === initialMonth && initialSummary) {
+      return;
+    }
+
     void loadSummary(month);
-  }, [loadSummary, month]);
+  }, [initialMonth, initialSummary, loadSummary, month]);
 
   async function refreshSummary() {
     await loadSummary(month);

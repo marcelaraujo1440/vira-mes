@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getExpectedSessionToken, sessionCookieName } from "@/lib/auth";
+import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
 
 function isPublicPath(pathname: string) {
   return pathname === "/login" || pathname.startsWith("/_next") || pathname === "/favicon.ico";
@@ -10,22 +10,33 @@ function isAuthApiPath(pathname: string) {
   return pathname.startsWith("/api/auth/");
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const sessionToken = request.cookies.get(getSessionCookieName())?.value;
+  const session = await verifySessionToken(sessionToken);
+  const isAuthenticated = Boolean(session);
 
   if (isPublicPath(pathname) || isAuthApiPath(pathname)) {
-    const hasSession = request.cookies.get(sessionCookieName)?.value === getExpectedSessionToken();
-
-    if (pathname === "/login" && hasSession) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    return NextResponse.next();
+    return handlePublicAccess(pathname, request, isAuthenticated);
   }
 
-  const hasValidSession = request.cookies.get(sessionCookieName)?.value === getExpectedSessionToken();
+  return handleProtectedAccess(pathname, request, isAuthenticated);
+}
 
-  if (hasValidSession) {
+export const config = {
+  matcher: ["/((?!.*\\..*).*)"]
+};
+
+function handlePublicAccess(pathname: string, request: NextRequest, isAuthenticated: boolean) {
+  if (pathname === "/login" && isAuthenticated) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  return NextResponse.next();
+}
+
+function handleProtectedAccess(pathname: string, request: NextRequest, isAuthenticated: boolean) {
+  if (isAuthenticated) {
     return NextResponse.next();
   }
 
@@ -33,12 +44,5 @@ export function middleware(request: NextRequest) {
     return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
   }
 
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
-
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.redirect(new URL("/login", request.url));
 }
-
-export const config = {
-  matcher: ["/((?!.*\\..*).*)"]
-};

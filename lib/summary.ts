@@ -1,10 +1,14 @@
 import { expenseCategories } from "@/lib/constants";
-import { getMonthlyBalanceHistory } from "@/lib/google-sheets";
+import { normalizeMonthValue } from "@/lib/date";
+import { getMonthlyBalanceHistory } from "@/lib/database";
 import type { Expense, Income, Summary, Transaction } from "@/lib/types";
 
 export async function buildSummary(month: string, expenses: Expense[], income: Income[]) {
-  const monthExpenses = expenses.filter((entry) => entry.month === month);
-  const monthIncome = income.filter((entry) => entry.month === month);
+  const normalizedMonth = normalizeMonthValue(month);
+  const monthExpenses = expenses.filter(
+    (entry) => normalizeMonthValue(entry.month) === normalizedMonth
+  );
+  const monthIncome = income.filter((entry) => normalizeMonthValue(entry.month) === normalizedMonth);
 
   const totalIncome = monthIncome.reduce((sum, entry) => sum + entry.amount, 0);
   const totalExpenses = monthExpenses.reduce((sum, entry) => sum + entry.amount, 0);
@@ -29,7 +33,7 @@ export async function buildSummary(month: string, expenses: Expense[], income: I
   ].sort((left, right) => right.sortDate.localeCompare(left.sortDate));
 
   return {
-    month,
+    month: normalizedMonth,
     totalIncome,
     totalExpenses,
     balance: totalIncome - totalExpenses,

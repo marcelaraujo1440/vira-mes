@@ -1,11 +1,11 @@
-˜# Vira Mes
+# Vira Mes
 
-Aplicativo pessoal de controle financeiro com Next.js 14, Google Sheets como banco de dados, gráficos em Recharts e deploy pensado para Vercel.
+Aplicativo pessoal de controle financeiro com Next.js 14, Supabase Postgres, autenticação por PIN de 6 dígitos e gráficos em Recharts.
 
 ## Stack
 
 - Next.js 14 com App Router e TypeScript
-- Google Sheets API v4 para persistência
+- Supabase Postgres para persistência
 - Tailwind CSS com componentes no estilo shadcn/ui
 - Recharts para visualização
 - Vercel Cron Jobs para rotina agendada
@@ -22,63 +22,77 @@ Aplicativo pessoal de controle financeiro com Next.js 14, Google Sheets como ban
 - Tabela unificada de lançamentos com exclusão por item
 - Toasts de sucesso e erro
 - Skeletons de carregamento
-
-## Estrutura esperada da planilha
-
-Crie uma planilha do Google com duas abas:
-
-### Aba `Expenses`
-
-Colunas:
-
-`id | date | month | category | description | amount`
-
-### Aba `Income`
-
-Colunas:
-
-`id | month | description | amount`
-
-Observação: o app também consegue criar automaticamente a primeira linha de cabeçalhos se a aba estiver vazia.
+- Cadastro com nome, PIN e confirmação de PIN
+- Login com PIN de 6 dígitos
+- Sessão protegida por cookie assinado
 
 ## Variáveis de ambiente
 
 Copie `.env.example` para `.env.local` e preencha:
 
 ```bash
-GOOGLE_SHEETS_ID=
-GOOGLE_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FINANCE_APP_PIN=1234
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+AUTH_SECRET=
 ```
 
-## Como criar a Service Account
+## Como configurar o Supabase
 
-1. Acesse o [Google Cloud Console](https://console.cloud.google.com/).
-2. Crie um projeto novo ou use um existente.
-3. Vá em `APIs & Services` > `Library`.
-4. Busque por `Google Sheets API` e clique em `Enable`.
-5. Vá em `APIs & Services` > `Credentials`.
-6. Clique em `Create Credentials` > `Service account`.
-7. Dê um nome para a conta e conclua a criação.
-8. Abra a conta criada, vá em `Keys` e gere uma nova chave do tipo `JSON`.
-9. No arquivo JSON, copie:
-   - `client_email` para `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `private_key` para `GOOGLE_PRIVATE_KEY`
-10. Mantenha os `\n` no valor da chave privada ao salvar a variável.
+1. Acesse [supabase.com](https://supabase.com/) e crie um projeto.
+2. No painel do projeto, abra `Project Settings` > `API`.
+3. Copie:
+   - `Project URL` para `NEXT_PUBLIC_SUPABASE_URL`
+   - `service_role` para `SUPABASE_SERVICE_ROLE_KEY`
+4. Gere um segredo para sessão e salve em `AUTH_SECRET`.
+   Exemplo:
+   ```bash
+   openssl rand -base64 32
+   ```
 
-## Como compartilhar a planilha
+Observação: a `service_role` deve ser usada apenas no servidor. Neste projeto ela nunca vai para o browser.
 
-1. Abra a planilha no Google Sheets.
-2. Clique em `Compartilhar`.
-3. Adicione o `client_email` da Service Account como editor.
-4. Copie o ID da planilha pela URL:
+## Como criar as tabelas
 
-```txt
-https://docs.google.com/spreadsheets/d/ESTE_E_O_ID/edit#gid=0
-```
+1. No Supabase, abra `SQL Editor`.
+2. Cole o conteúdo de [supabase/schema.sql](/Users/marcelfilho/Documents/vira-mes/supabase/schema.sql).
+3. Execute o script.
 
-Use esse valor em `GOOGLE_SHEETS_ID`.
+Esse schema cria:
+
+- tabela `expenses`
+- tabela `income`
+- tabela `app_users` com `full_name` e `pin_hash`
+- índices por mês, data e email
+- `uuid` automático para as linhas
+
+## Como funciona o acesso
+
+Na tela de autenticação, a pessoa pode:
+
+- cadastrar `nome + PIN + confirmar PIN`
+- entrar depois digitando apenas o `PIN`
+
+O PIN não é salvo em texto puro. O app guarda apenas `pin_hash` na tabela `app_users` e assina a sessão no servidor antes de gravar o cookie no navegador.
+
+## Estrutura do banco
+
+### Tabela `expenses`
+
+- `id uuid primary key`
+- `date date not null`
+- `month text not null`
+- `category text not null`
+- `description text`
+- `amount numeric(12,2) not null`
+- `created_at timestamptz not null`
+
+### Tabela `income`
+
+- `id uuid primary key`
+- `month text not null`
+- `description text`
+- `amount numeric(12,2) not null`
+- `created_at timestamptz not null`
 
 ## Rodando localmente
 
@@ -94,10 +108,9 @@ Abra [http://localhost:3000](http://localhost:3000).
 1. Suba o projeto para GitHub, GitLab ou Bitbucket.
 2. Importe o repositório na [Vercel](https://vercel.com/).
 3. Em `Project Settings` > `Environment Variables`, adicione:
-   - `GOOGLE_SHEETS_ID`
-   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `GOOGLE_PRIVATE_KEY`
-   - `FINANCE_APP_PIN`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `AUTH_SECRET`
 4. Faça o deploy.
 
 ## Cron Job
@@ -119,6 +132,9 @@ Essa rota recalcula e devolve o resumo do mês atual, servindo como ponto simple
 
 ## Rotas da API
 
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+- `POST /api/auth/logout`
 - `GET /api/expenses?month=YYYY-MM`
 - `POST /api/expenses`
 - `DELETE /api/expenses?id=xxx`
@@ -130,6 +146,6 @@ Essa rota recalcula e devolve o resumo do mês atual, servindo como ponto simple
 ## Observações
 
 - O campo `month` da saída é preenchido automaticamente pela data, mas pode ser ajustado antes de salvar.
-- As exclusões são feitas por `id`, procurando a linha correspondente e removendo-a da aba correta.
 - O app foi desenhado em abordagem mobile-first e funciona bem em desktop.
-- O acesso agora é protegido por um PIN numérico simples configurado em `FINANCE_APP_PIN`.
+- Como o projeto usa uma API própria no servidor, o browser não precisa receber a `service_role`.
+- Se a tabela `app_users` já existe no seu projeto, rode novamente o SQL de [supabase/schema.sql](/Users/marcelfilho/Documents/vira-mes/supabase/schema.sql) para adicionar `pin_hash`.

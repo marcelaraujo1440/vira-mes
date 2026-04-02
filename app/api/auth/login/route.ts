@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getExpectedSessionToken, isValidPin, sessionCookieName } from "@/lib/auth";
 import { handleRouteError } from "@/lib/api";
+import { applySessionCookie, hashPin } from "@/lib/auth";
+import { findPinUserByHash } from "@/lib/database";
 
 const loginSchema = z.object({
-  pin: z.string().regex(/^\d+$/, "Digite apenas numeros.")
+  pin: z.string().regex(/^\d{6}$/, "Digite um PIN com 6 digitos.")
 });
 
 export const dynamic = "force-dynamic";
@@ -13,22 +14,15 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const { pin } = loginSchema.parse(await request.json());
+    const user = await findPinUserByHash(await hashPin(pin));
 
-    if (!isValidPin(pin)) {
-      return NextResponse.json({ message: "PIN incorreto." }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ message: "PIN invalido." }, { status: 401 });
     }
 
-    const response = NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true, userId: user.id });
 
-    response.cookies.set({
-      name: sessionCookieName,
-      value: getExpectedSessionToken(),
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30
-    });
+    await applySessionCookie(response, user.id);
 
     return response;
   } catch (error) {

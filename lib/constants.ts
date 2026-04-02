@@ -9,7 +9,4 @@ export const expenseCategories = [
   "Outros"
 ] as const;
 
-export const expenseSheetName = "Expenses";
-export const incomeSheetName = "Income";
-
 export type ExpenseCategory = (typeof expenseCategories)[number];
