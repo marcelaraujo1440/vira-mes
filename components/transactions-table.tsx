@@ -36,8 +36,11 @@ export function TransactionsTable({ items, onDelete }: TransactionsTableProps) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-[1.5rem] border border-dashed border-border/70 bg-background/60 p-8 text-center text-sm text-muted-foreground">
-        Nenhum lancamento encontrado neste mes.
+      <div className="soft-grid rounded-[1.5rem] border border-dashed border-border/70 bg-background/60 p-8 text-center">
+        <p className="font-[family-name:var(--font-display)] text-2xl text-foreground">Seu mes ainda esta em branco.</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+          Registre uma entrada ou saída para começar a montar o fechamento deste período.
+        </p>
       </div>
     );
   }
@@ -56,7 +59,7 @@ export function TransactionsTable({ items, onDelete }: TransactionsTableProps) {
       </TableHeader>
       <TableBody>
         {items.map((transaction) => (
-          <TableRow key={transaction.id}>
+          <TableRow className="hover:bg-background/70" key={transaction.id}>
             <TableCell className="font-medium">
               <span
                 className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.22em] ${
@@ -73,7 +76,13 @@ export function TransactionsTable({ items, onDelete }: TransactionsTableProps) {
             <TableCell>{transaction.description || "Sem descricao"}</TableCell>
             <TableCell className="text-right font-semibold">{formatCurrency(transaction.amount)}</TableCell>
             <TableCell className="text-right">
-              <Button size="icon" type="button" variant="ghost" onClick={() => handleDelete(transaction)}>
+              <Button
+                className="text-muted-foreground transition-colors hover:text-destructive"
+                size="icon"
+                type="button"
+                variant="ghost"
+                onClick={() => handleDelete(transaction)}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </TableCell>

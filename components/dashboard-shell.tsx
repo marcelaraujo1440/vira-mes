@@ -37,11 +37,13 @@ const ChartsPanel = dynamic(
 type DashboardShellProps = {
   initialMonth?: string;
   initialSummary?: Summary | null;
+  userName?: string;
 };
 
 export function DashboardShell({
   initialMonth = getCurrentMonth(),
-  initialSummary = null
+  initialSummary = null,
+  userName = ""
 }: DashboardShellProps) {
   const [month, setMonth] = useState(initialMonth);
   const [summary, setSummary] = useState<Summary | null>(initialSummary);
@@ -112,13 +114,16 @@ export function DashboardShell({
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
       <section className="mb-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="overflow-hidden">
+        <Card className="glass-cream overflow-hidden">
           <CardHeader className="relative gap-5 pb-8">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background/75 px-3 py-1 text-xs uppercase tracking-[0.28em] text-muted-foreground">
               <Landmark className="h-3.5 w-3.5" />
               Vira Mes
             </div>
             <div className="space-y-3">
+              {userName ? (
+                <p className="section-kicker">Ola, {userName}</p>
+              ) : null}
               <CardTitle className="ink-title max-w-2xl text-4xl sm:text-5xl">
                 Seu caixa mensal, em um painel que parece caderno de fechamento.
               </CardTitle>
@@ -145,7 +150,7 @@ export function DashboardShell({
           </CardContent>
         </Card>
         <div className="grid gap-4">
-          <Card>
+          <Card className="glass-cream">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl">Filtrar periodo</CardTitle>
               <CardDescription>Todos os graficos e listas acompanham esta selecao.</CardDescription>
@@ -161,7 +166,7 @@ export function DashboardShell({
           </Card>
           <div className="grid gap-4 sm:grid-cols-2">
             <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
-              <Card className="overflow-hidden">
+              <Card className="glass-cream overflow-hidden">
                 <CardContent className="flex h-full flex-col justify-between gap-5 p-6">
                   <div className="space-y-3">
                     <div className="inline-flex w-fit items-center gap-2 rounded-full bg-amber-200/60 px-3 py-1 text-xs uppercase tracking-[0.24em] text-amber-950">
@@ -182,7 +187,7 @@ export function DashboardShell({
                   </DialogTrigger>
                 </CardContent>
               </Card>
-              <DialogContent>
+              <DialogContent className="glass-cream">
                 <DialogHeader className="mb-5">
                   <DialogTitle>Nova saída</DialogTitle>
                   <DialogDescription>
@@ -194,7 +199,7 @@ export function DashboardShell({
             </Dialog>
 
             <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
-              <Card className="overflow-hidden">
+              <Card className="glass-cream overflow-hidden">
                 <CardContent className="flex h-full flex-col justify-between gap-5 p-6">
                   <div className="space-y-3">
                     <div className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-200/60 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-950">
@@ -215,7 +220,7 @@ export function DashboardShell({
                   </DialogTrigger>
                 </CardContent>
               </Card>
-              <DialogContent>
+              <DialogContent className="glass-cream">
                 <DialogHeader className="mb-5">
                   <DialogTitle>Nova entrada</DialogTitle>
                   <DialogDescription>
@@ -241,8 +246,9 @@ export function DashboardShell({
         </section>
 
         <section className="mt-4">
-          <Card>
+          <Card className="glass-cream overflow-hidden">
             <CardHeader>
+              <p className="section-kicker">Livro de movimentos</p>
               <CardTitle className="text-2xl">Lancamentos do mes</CardTitle>
               <CardDescription>
                 Entradas e saídas reunidas na mesma mesa para facilitar o fechamento.

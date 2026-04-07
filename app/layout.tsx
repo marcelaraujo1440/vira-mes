@@ -17,7 +17,7 @@ const bodyFont = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: "Vira Mes",
-  description: "Personal finance tracker powered by Next.js, Google Sheets, and Vercel Cron."
+  description: "Controle financeiro pessoal com visual editorial, PIN de acesso e dashboard mensal."
 };
 
 export default function RootLayout({

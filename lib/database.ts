@@ -73,6 +73,20 @@ function mapAppUserRow(row: AppUserRow) {
   };
 }
 
+export async function getAppUserById(userId: string) {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("app_users")
+    .select("id, full_name, pin_hash, is_active")
+    .eq("id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  throwIfDatabaseError(error);
+
+  return data ? mapAppUserRow(data) : null;
+}
+
 function mapRateLimitRow(row: LoginRateLimitRow) {
   return {
     scopeKey: row.scope_key,
