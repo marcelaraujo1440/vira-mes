@@ -30,6 +30,10 @@ export function LoginCard() {
   const [isPinVisible, setIsPinVisible] = useState(false);
   const [isConfirmPinVisible, setIsConfirmPinVisible] = useState(false);
 
+  function normalizePin(value: string) {
+    return value.replace(/\D/g, "").slice(0, 6);
+  }
+
   function PinVisibilityButton({
     isVisible,
     onToggle
@@ -49,10 +53,6 @@ export function LoginCard() {
         <Icon className="h-4 w-4" />
       </button>
     );
-  }
-
-  function normalizePin(value: string) {
-    return value.replace(/\D/g, "").slice(0, 6);
   }
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {

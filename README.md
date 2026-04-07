@@ -6,7 +6,7 @@ O projeto foi pensado para uso real no dia a dia:
 - mobile-first
 - fluxo rápido para lançar gastos
 - dashboard com visão mensal
-- autenticação simples por PIN de 6 dígitos
+- autenticação por nome de usuário e PIN de 6 dígitos
 
 ## O que o app faz
 
@@ -16,7 +16,8 @@ O projeto foi pensado para uso real no dia a dia:
 - exibe gráficos de categoria, evolução de saldo e distribuição percentual
 - lista os lançamentos do mês em tabela
 - permite excluir lançamentos
-- protege o acesso com cadastro por `nome + PIN`
+- isola os dados por usuário
+- protege o acesso com `nome + PIN`
 
 ## Stack
 
@@ -31,35 +32,18 @@ O projeto foi pensado para uso real no dia a dia:
 
 ## Como funciona a autenticação
 
-O app usa um fluxo simples de PIN:
+O app usa um fluxo simples:
 
-- no primeiro acesso, a pessoa cadastra `nome + PIN + confirmar PIN`
-- depois disso, para entrar basta digitar o `PIN`
+- no cadastro, a pessoa informa `nome + PIN + confirmar PIN`
+- no login, entra com `nome de usuário + PIN`
 - o PIN não é salvo em texto puro
 - o sistema armazena apenas `pin_hash` no banco
 - a sessão é mantida por cookie assinado no servidor
+- o login tem rate limiting por `nome + IP`
 
 ## Estrutura do banco
 
-O projeto usa 3 tabelas principais:
-
-### `expenses`
-
-- `id`
-- `date`
-- `month`
-- `category`
-- `description`
-- `amount`
-- `created_at`
-
-### `income`
-
-- `id`
-- `month`
-- `description`
-- `amount`
-- `created_at`
+O projeto usa estas tabelas:
 
 ### `app_users`
 
@@ -70,12 +54,42 @@ O projeto usa 3 tabelas principais:
 - `is_active`
 - `created_at`
 
+### `expenses`
+
+- `id`
+- `user_id`
+- `date`
+- `month`
+- `category`
+- `description`
+- `amount`
+- `created_at`
+
+### `income`
+
+- `id`
+- `user_id`
+- `month`
+- `description`
+- `amount`
+- `created_at`
+
+### `login_rate_limits`
+
+- `scope_key`
+- `attempts`
+- `window_started_at`
+- `blocked_until`
+- `created_at`
+- `updated_at`
+
 ## Variáveis de ambiente
 
-Crie um arquivo [`.env.local`] na raiz do projeto com:
+Crie um arquivo [`.env.local`](/Users/marcelfilho/Documents/vira-mes/.env.local) com:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 AUTH_SECRET=
 ```
@@ -85,8 +99,11 @@ AUTH_SECRET=
 - `NEXT_PUBLIC_SUPABASE_URL`
   URL do projeto no Supabase
 
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+  chave pública do projeto
+
 - `SUPABASE_SERVICE_ROLE_KEY`
-  chave `service_role` do Supabase
+  chave `service_role` usada só no servidor
 
 - `AUTH_SECRET`
   segredo usado para assinar a sessão do app
@@ -112,16 +129,21 @@ No painel do Supabase:
 2. vá em `API Keys`
 3. copie:
    - `Project URL` -> `NEXT_PUBLIC_SUPABASE_URL`
+   - `publishable key` -> `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `service_role` -> `SUPABASE_SERVICE_ROLE_KEY`
 
-### 3. Criar as tabelas
+### 3. Criar ou atualizar as tabelas
 
 1. abra `SQL Editor`
 2. clique em `New query`
-3. cole o conteúdo de [supabase/schema.sql]
+3. cole o conteúdo de [supabase/schema.sql](/Users/marcelfilho/Documents/vira-mes/supabase/schema.sql)
 4. clique em `Run`
 
-Se você já criou a tabela `app_users` antes, rode esse arquivo de novo para garantir que a coluna `pin_hash` exista.
+Esse arquivo:
+- cria as tabelas principais
+- adiciona `user_id` para isolar os dados por usuário
+- ativa RLS
+- cria a tabela de rate limiting
 
 ## Como rodar localmente
 
@@ -133,7 +155,7 @@ npm install
 
 ### 2. Configurar o ambiente
 
-Crie [`.env.local`] com as variáveis mostradas acima.
+Crie [`.env.local`](/Users/marcelfilho/Documents/vira-mes/.env.local) com as variáveis mostradas acima.
 
 ### 3. Subir o projeto
 
@@ -160,26 +182,10 @@ npm run dev
 2. importe o repositório na [Vercel](https://vercel.com/)
 3. adicione estas variáveis em `Project Settings` > `Environment Variables`:
    - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `AUTH_SECRET`
 4. faça o deploy
-
-## Cron Job
-
-O projeto inclui um cron em [vercel.json]
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/summary",
-      "schedule": "0 6 * * *"
-    }
-  ]
-}
-```
-
-Hoje ele serve como base para automações futuras, como fechamento mensal, alertas ou resumos automáticos.
 
 ## Rotas da API
 
@@ -193,6 +199,14 @@ Hoje ele serve como base para automações futuras, como fechamento mensal, aler
 - `POST /api/income`
 - `DELETE /api/income?id=xxx`
 - `GET /api/summary?month=YYYY-MM`
+
+## Segurança
+
+- sessão por cookie assinado
+- PIN armazenado como hash
+- isolamento por `user_id`
+- RLS ativado no schema
+- rate limiting no login
 
 ## Observações
 

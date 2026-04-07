@@ -217,20 +217,6 @@ export async function createPinUser(input: { fullName: string; pinHash: string }
   return mapAppUserRow(data);
 }
 
-export async function findPinUserByHash(pinHash: string) {
-  const supabase = getSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("app_users")
-    .select("id, full_name, pin_hash, is_active")
-    .eq("pin_hash", pinHash)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  throwIfDatabaseError(error);
-
-  return data ? mapAppUserRow(data) : null;
-}
-
 export async function findPinUserByNameAndHash(fullName: string, pinHash: string) {
   const supabase = getSupabaseAdminClient();
   const normalizedName = fullName.trim();
