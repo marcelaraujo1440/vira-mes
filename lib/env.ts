@@ -1,15 +1,17 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  GOOGLE_SHEETS_ID: z.string().min(1),
-  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().email(),
-  GOOGLE_PRIVATE_KEY: z.string().min(1)
+  NEXT_PUBLIC_SUPABASE_URL: z
+    .string({ required_error: "NEXT_PUBLIC_SUPABASE_URL nao configurado." })
+    .url("NEXT_PUBLIC_SUPABASE_URL invalido."),
+  SUPABASE_SERVICE_ROLE_KEY: z
+    .string({ required_error: "SUPABASE_SERVICE_ROLE_KEY nao configurado." })
+    .min(1, "SUPABASE_SERVICE_ROLE_KEY nao configurado.")
 });
 
 export function getEnv() {
   return envSchema.parse({
-    GOOGLE_SHEETS_ID: process.env.GOOGLE_SHEETS_ID,
-    GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
   });
 }

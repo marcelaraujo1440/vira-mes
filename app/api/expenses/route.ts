@@ -1,22 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/api";
+import { getSessionFromRequest } from "@/lib/auth";
 import {
   appendExpense,
   deleteExpenseById,
   filterByMonth,
   listExpenses
-} from "@/lib/google-sheets";
+} from "@/lib/database";
 import { expenseInputSchema, deleteQuerySchema, monthQuerySchema, normalizeExpensePayload } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSessionFromRequest(request);
+
+    if (!session) {
+      return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    }
+
     const month = monthQuerySchema.parse({
       month: request.nextUrl.searchParams.get("month")
     }).month;
-    const expenses = await listExpenses();
+    const expenses = await listExpenses(session.userId);
 
     return NextResponse.json(filterByMonth(expenses, month));
   } catch (error) {
@@ -26,8 +33,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSessionFromRequest(request);
+
+    if (!session) {
+      return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    }
+
     const payload = normalizeExpensePayload(expenseInputSchema.parse(await request.json()));
-    const expense = await appendExpense(payload);
+    const expense = await appendExpense(payload, session.userId);
 
     return NextResponse.json(expense, { status: 201 });
   } catch (error) {
@@ -37,10 +50,16 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await getSessionFromRequest(request);
+
+    if (!session) {
+      return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    }
+
     const id = deleteQuerySchema.parse({
       id: request.nextUrl.searchParams.get("id")
     }).id;
-    const deleted = await deleteExpenseById(id);
+    const deleted = await deleteExpenseById(id, session.userId);
 
     if (!deleted) {
       return NextResponse.json({ message: "Lancamento nao encontrado." }, { status: 404 });

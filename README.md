@@ -1,108 +1,172 @@
-˜# Vira Mes
+# Vira Mes
 
-Aplicativo pessoal de controle financeiro com Next.js 14, Google Sheets como banco de dados, gráficos em Recharts e deploy pensado para Vercel.
+App pessoal de controle financeiro feito para registrar entradas e saídas de forma rápida, acompanhar o saldo do mês e visualizar para onde o dinheiro está indo.
+
+O projeto foi pensado para uso real no dia a dia:
+- mobile-first
+- fluxo rápido para lançar gastos
+- dashboard com visão mensal
+- autenticação simples por PIN de 6 dígitos
+
+## O que o app faz
+
+- cadastra saídas com `data`, `categoria`, `descrição`, `valor` e `mês`
+- cadastra entradas com `mês`, `descrição` e `valor`
+- mostra cards com `entradas`, `saídas` e `saldo`
+- exibe gráficos de categoria, evolução de saldo e distribuição percentual
+- lista os lançamentos do mês em tabela
+- permite excluir lançamentos
+- protege o acesso com cadastro por `nome + PIN`
 
 ## Stack
 
-- Next.js 14 com App Router e TypeScript
-- Google Sheets API v4 para persistência
-- Tailwind CSS com componentes no estilo shadcn/ui
-- Recharts para visualização
-- Vercel Cron Jobs para rotina agendada
+- Next.js 14
+- TypeScript
+- Supabase Postgres
+- Tailwind CSS
+- shadcn/ui
+- Recharts
+- Vercel
+- Vercel Cron Jobs
 
-## Funcionalidades
+## Como funciona a autenticação
 
-- Cadastro de saídas com data, categoria, descrição, valor e mês
-- Cadastro de entradas por mês
-- Dashboard com filtro mensal
-- Cards de resumo com total de entradas, saídas e saldo
-- Gráfico de barras por categoria
-- Gráfico de linha com evolução do saldo nos últimos 6 meses
-- Gráfico de pizza com divisão percentual das despesas
-- Tabela unificada de lançamentos com exclusão por item
-- Toasts de sucesso e erro
-- Skeletons de carregamento
+O app usa um fluxo simples de PIN:
 
-## Estrutura esperada da planilha
+- no primeiro acesso, a pessoa cadastra `nome + PIN + confirmar PIN`
+- depois disso, para entrar basta digitar o `PIN`
+- o PIN não é salvo em texto puro
+- o sistema armazena apenas `pin_hash` no banco
+- a sessão é mantida por cookie assinado no servidor
 
-Crie uma planilha do Google com duas abas:
+## Estrutura do banco
 
-### Aba `Expenses`
+O projeto usa 3 tabelas principais:
 
-Colunas:
+### `expenses`
 
-`id | date | month | category | description | amount`
+- `id`
+- `date`
+- `month`
+- `category`
+- `description`
+- `amount`
+- `created_at`
 
-### Aba `Income`
+### `income`
 
-Colunas:
+- `id`
+- `month`
+- `description`
+- `amount`
+- `created_at`
 
-`id | month | description | amount`
+### `app_users`
 
-Observação: o app também consegue criar automaticamente a primeira linha de cabeçalhos se a aba estiver vazia.
+- `id`
+- `full_name`
+- `email`
+- `pin_hash`
+- `is_active`
+- `created_at`
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env.local` e preencha:
+Crie um arquivo [`.env.local`] na raiz do projeto com:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+AUTH_SECRET=
+```
+
+### O que vai em cada variável
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+  URL do projeto no Supabase
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+  chave `service_role` do Supabase
+
+- `AUTH_SECRET`
+  segredo usado para assinar a sessão do app
+
+Para gerar um `AUTH_SECRET`:
 
 ```bash
-GOOGLE_SHEETS_ID=
-GOOGLE_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FINANCE_APP_PIN=1234
+openssl rand -base64 32
 ```
 
-## Como criar a Service Account
+## Como configurar o Supabase
 
-1. Acesse o [Google Cloud Console](https://console.cloud.google.com/).
-2. Crie um projeto novo ou use um existente.
-3. Vá em `APIs & Services` > `Library`.
-4. Busque por `Google Sheets API` e clique em `Enable`.
-5. Vá em `APIs & Services` > `Credentials`.
-6. Clique em `Create Credentials` > `Service account`.
-7. Dê um nome para a conta e conclua a criação.
-8. Abra a conta criada, vá em `Keys` e gere uma nova chave do tipo `JSON`.
-9. No arquivo JSON, copie:
-   - `client_email` para `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `private_key` para `GOOGLE_PRIVATE_KEY`
-10. Mantenha os `\n` no valor da chave privada ao salvar a variável.
+### 1. Criar o projeto
 
-## Como compartilhar a planilha
+1. Acesse [supabase.com](https://supabase.com/)
+2. Crie um novo projeto
 
-1. Abra a planilha no Google Sheets.
-2. Clique em `Compartilhar`.
-3. Adicione o `client_email` da Service Account como editor.
-4. Copie o ID da planilha pela URL:
+### 2. Pegar as chaves
 
-```txt
-https://docs.google.com/spreadsheets/d/ESTE_E_O_ID/edit#gid=0
-```
+No painel do Supabase:
 
-Use esse valor em `GOOGLE_SHEETS_ID`.
+1. abra `Settings`
+2. vá em `API Keys`
+3. copie:
+   - `Project URL` -> `NEXT_PUBLIC_SUPABASE_URL`
+   - `service_role` -> `SUPABASE_SERVICE_ROLE_KEY`
 
-## Rodando localmente
+### 3. Criar as tabelas
+
+1. abra `SQL Editor`
+2. clique em `New query`
+3. cole o conteúdo de [supabase/schema.sql]
+4. clique em `Run`
+
+Se você já criou a tabela `app_users` antes, rode esse arquivo de novo para garantir que a coluna `pin_hash` exista.
+
+## Como rodar localmente
+
+### 1. Instalar dependências
 
 ```bash
 npm install
+```
+
+### 2. Configurar o ambiente
+
+Crie [`.env.local`] com as variáveis mostradas acima.
+
+### 3. Subir o projeto
+
+```bash
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000).
+### 4. Abrir no navegador
+
+[http://localhost:3000](http://localhost:3000)
+
+## Fluxo esperado no primeiro uso
+
+1. abrir o app
+2. ir para a tela de login
+3. clicar em `Cadastrar`
+4. informar `nome`, `PIN` e `confirmar PIN`
+5. entrar no dashboard
+6. começar a registrar entradas e saídas
 
 ## Deploy na Vercel
 
-1. Suba o projeto para GitHub, GitLab ou Bitbucket.
-2. Importe o repositório na [Vercel](https://vercel.com/).
-3. Em `Project Settings` > `Environment Variables`, adicione:
-   - `GOOGLE_SHEETS_ID`
-   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `GOOGLE_PRIVATE_KEY`
-   - `FINANCE_APP_PIN`
-4. Faça o deploy.
+1. suba o projeto para o GitHub
+2. importe o repositório na [Vercel](https://vercel.com/)
+3. adicione estas variáveis em `Project Settings` > `Environment Variables`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `AUTH_SECRET`
+4. faça o deploy
 
 ## Cron Job
 
-O projeto inclui `vercel.json` com uma rotina diária:
+O projeto inclui um cron em [vercel.json]
 
 ```json
 {
@@ -115,10 +179,13 @@ O projeto inclui `vercel.json` com uma rotina diária:
 }
 ```
 
-Essa rota recalcula e devolve o resumo do mês atual, servindo como ponto simples para automação futura.
+Hoje ele serve como base para automações futuras, como fechamento mensal, alertas ou resumos automáticos.
 
 ## Rotas da API
 
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
 - `GET /api/expenses?month=YYYY-MM`
 - `POST /api/expenses`
 - `DELETE /api/expenses?id=xxx`
@@ -129,7 +196,7 @@ Essa rota recalcula e devolve o resumo do mês atual, servindo como ponto simple
 
 ## Observações
 
-- O campo `month` da saída é preenchido automaticamente pela data, mas pode ser ajustado antes de salvar.
-- As exclusões são feitas por `id`, procurando a linha correspondente e removendo-a da aba correta.
-- O app foi desenhado em abordagem mobile-first e funciona bem em desktop.
-- O acesso agora é protegido por um PIN numérico simples configurado em `FINANCE_APP_PIN`.
+- o campo `month` da saída é preenchido automaticamente pela `date`, mas pode ser ajustado
+- o app foi desenhado com foco em uso no celular
+- o dashboard já nasce com o resumo calculado no servidor para evitar telas zeradas no primeiro carregamento
+- o browser nunca recebe a `service_role`

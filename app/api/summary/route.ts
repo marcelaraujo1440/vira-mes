@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/api";
-import { listExpenses, listIncome } from "@/lib/google-sheets";
+import { getSessionFromRequest } from "@/lib/auth";
+import { listExpenses, listIncome } from "@/lib/database";
 import { buildSummary } from "@/lib/summary";
 import { monthQuerySchema } from "@/lib/validation";
 
@@ -9,10 +10,19 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getSessionFromRequest(request);
+
+    if (!session) {
+      return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
+    }
+
     const month = monthQuerySchema.parse({
       month: request.nextUrl.searchParams.get("month")
     }).month;
-    const [expenses, income] = await Promise.all([listExpenses(), listIncome()]);
+    const [expenses, income] = await Promise.all([
+      listExpenses(session.userId),
+      listIncome(session.userId)
+    ]);
     const summary = await buildSummary(month, expenses, income);
 
     return NextResponse.json(summary);

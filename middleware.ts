@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getExpectedSessionToken, sessionCookieName } from "@/lib/auth";
+import { sessionCookieName, verifySessionToken } from "@/lib/auth";
 
 function isPublicPath(pathname: string) {
   return pathname === "/login" || pathname.startsWith("/_next") || pathname === "/favicon.ico";
@@ -10,20 +10,18 @@ function isAuthApiPath(pathname: string) {
   return pathname.startsWith("/api/auth/");
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const session = await verifySessionToken(request.cookies.get(sessionCookieName)?.value);
+  const hasValidSession = Boolean(session);
 
   if (isPublicPath(pathname) || isAuthApiPath(pathname)) {
-    const hasSession = request.cookies.get(sessionCookieName)?.value === getExpectedSessionToken();
-
-    if (pathname === "/login" && hasSession) {
+    if (pathname === "/login" && hasValidSession) {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
     return NextResponse.next();
   }
-
-  const hasValidSession = request.cookies.get(sessionCookieName)?.value === getExpectedSessionToken();
 
   if (hasValidSession) {
     return NextResponse.next();
